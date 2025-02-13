@@ -71,6 +71,7 @@ function AddItemForm({ onNewItem }) {
     const { Form, InputGroup, Button } = ReactBootstrap;
 
     const [newItem, setNewItem] = React.useState('');
+    const [category, setCategory] = React.useState('home');
     const [submitting, setSubmitting] = React.useState(false);
 
     const submitNewItem = e => {
@@ -78,7 +79,7 @@ function AddItemForm({ onNewItem }) {
         setSubmitting(true);
         fetch('/items', {
             method: 'POST',
-            body: JSON.stringify({ name: newItem }),
+            body: JSON.stringify({ name: newItem, category }),
             headers: { 'Content-Type': 'application/json' },
         })
             .then(r => r.json())
@@ -86,6 +87,7 @@ function AddItemForm({ onNewItem }) {
                 onNewItem(item);
                 setSubmitting(false);
                 setNewItem('');
+                setCategory('home');
             });
     };
 
@@ -99,6 +101,16 @@ function AddItemForm({ onNewItem }) {
                     placeholder="New Item"
                     aria-describedby="basic-addon1"
                 />
+                <Form.Control
+                    as="select"
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    className="ml-2"
+                >
+                    <option value="home">Home</option>
+                    <option value="work">Work</option>
+                    <option value="hobbies">Hobbies</option>
+                </Form.Control>
                 <InputGroup.Append>
                     <Button
                         type="submit"
@@ -115,7 +127,7 @@ function AddItemForm({ onNewItem }) {
 }
 
 function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
-    const { Container, Row, Col, Button } = ReactBootstrap;
+    const { Container, Row, Col, Button, Form } = ReactBootstrap;
 
     const toggleCompletion = () => {
         fetch(`/items/${item.id}`, {
@@ -123,6 +135,7 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
             body: JSON.stringify({
                 name: item.name,
                 completed: !item.completed,
+                category: item.category,
             }),
             headers: { 'Content-Type': 'application/json' },
         })
@@ -134,6 +147,21 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
         fetch(`/items/${item.id}`, { method: 'DELETE' }).then(() =>
             onItemRemoval(item),
         );
+    };
+
+    const updateCategory = e => {
+        const newCategory = e.target.value;
+        fetch(`/items/${item.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                name: item.name,
+                completed: item.completed,
+                category: newCategory,
+            }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+            .then(r => r.json())
+            .then(onItemUpdate);
     };
 
     return (
@@ -158,8 +186,20 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
                         />
                     </Button>
                 </Col>
-                <Col xs={10} className="name">
-                    {item.name}
+                <Col xs={8} className="name">
+                    {item.name} <span className="badge badge-primary">{item.category}</span>
+                </Col>
+                <Col xs={2} className="text-center">
+                    <Form.Control
+                        as="select"
+                        value={item.category}
+                        onChange={updateCategory}
+                        size="sm"
+                    >
+                        <option value="home">Home</option>
+                        <option value="work">Work</option>
+                        <option value="hobbies">Hobbies</option>
+                    </Form.Control>
                 </Col>
                 <Col xs={1} className="text-center remove">
                     <Button
